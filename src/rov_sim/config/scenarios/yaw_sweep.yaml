@@ -1,0 +1,27 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Scenario: yaw_sweep — Step to TELEOP, sweep yaw ±90°
+# ═══════════════════════════════════════════════════════════════════════════════
+# Setpoints order: [roll, pitch, yaw, surge, sway, heave]
+
+scenario:
+  name: "yaw_sweep"
+  description: >
+    Switch to TELEOP, hold depth at 0.5 m, then sweep yaw from 0 → +90 → -90 → 0.
+    Tests yaw tracking and angular wrapping.
+
+  steps:
+    - time: 0.0
+      mode: 1
+      setpoints: [0, 0, 0, 0, 0, 0.5]
+
+    - time: 2.0
+      setpoints: [0, 0, 90, 0, 0, 0.5]
+
+    - time: 7.0
+      setpoints: [0, 0, -90, 0, 0, 0.5]
+
+    - time: 12.0
+      setpoints: [0, 0, 0, 0, 0, 0.5]
+
+    - time: 17.0
+      mode: 0

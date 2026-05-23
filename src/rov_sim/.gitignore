@@ -1,0 +1,4 @@
+# rov_sim package ignores
+bags/
+__pycache__/
+*.pyc

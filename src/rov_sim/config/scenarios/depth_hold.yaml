@@ -1,0 +1,23 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Scenario: depth_hold — Step to TELEOP, command 1.0 m depth, hold, return
+# ═══════════════════════════════════════════════════════════════════════════════
+# Setpoints order: [roll, pitch, yaw, surge, sway, heave]
+# Modes: 0 = SURFACE, 1 = TELEOP
+
+scenario:
+  name: "depth_hold_1m"
+  description: >
+    Switch to TELEOP mode at surface depth (0.22 m), then command a
+    step to 1.0 m depth.  Hold for 10 seconds to observe settling,
+    then return to SURFACE mode.
+
+  steps:
+    - time: 0.0
+      mode: 1
+      setpoints: [0, 0, 0, 0, 0, 0.22]
+
+    - time: 2.0
+      setpoints: [0, 0, 0, 0, 0, 1.0]
+
+    - time: 12.0
+      mode: 0
