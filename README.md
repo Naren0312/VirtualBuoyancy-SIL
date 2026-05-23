@@ -156,7 +156,7 @@ The control package employs a synchronizer ([sensor_sync_node.cpp](file:///home/
 Before running the simulator, build and source your workspace:
 ```bash
 # Navigate to the workspace root
-cd ~/Documents/hammerhead-master/hammerhead-master/vibu_sil
+cd ~/vibu_sil
 
 # Clean build all packages
 colcon build --symlink-install
@@ -236,7 +236,7 @@ A test harness is provided to verify that control algorithm changes do not degra
 To run a regression script against a scenario (e.g. `depth_hold.yaml`):
 ```bash
 # Navigate to the script directory
-cd ~/Documents/hammerhead-master/hammerhead-master/vibu_sil/src/rov_sim/scripts
+cd ~/vibu_sil/src/rov_sim/scripts
 
 # Run regression test (uses depth_hold.yaml by default)
 ./run_regression.sh
