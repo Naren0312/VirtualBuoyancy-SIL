@@ -1,4 +1,4 @@
-# Hammerhead ROV — Unity3D Integration Guide
+#  Unity3D Integration Guide
 
 This document outlines the next steps to transition from the Python-based mock dynamics simulator to a high-fidelity **Unity3D visualizer and physics engine**.
 

@@ -14,9 +14,9 @@ control_node:
     #   pitch: kp=1.0, ki=0.024, kd=1.0
     #   yaw:   kp=3.0, ki=0.031, kd=1.0
     pid:
-      kp: [0.0, 1.0, 3.0, 0.2, 0.2, 3.0]
-      ki: [0.0, 0.024, 0.031, 0.0, 0.0, 0.165]
-      kd: [0.0, 1.0, 1.0, 0.0, 0.0, 4.0]
+      kp: [0.0, 1.0, 3.0, 0.2, 0.2, 1.0]
+      ki: [0.0, 0.024, 0.031, 0.0, 0.0, 0.05]
+      kd: [0.0, 1.0, 1.0, 0.0, 0.0, 8.0]
 
     # Thruster reverse flags [t1, t2, t3, t4, t5, t6]
     thruster_reverse: [false, false, false, true, true, false]
@@ -59,34 +59,37 @@ serial_bridge_node:
   ros__parameters:
     serial_port: "/dev/nuc_nano"
     baud_rate: 9600
-
-# ── Teleop Node ──────────────────────────────────────────────────────────────
+#---Teleop Node---
 teleop_node:
   ros__parameters:
-    # Joystick axis mappings
-    axis_yaw_coarse: 0
-    axis_yaw_fine: 3
+    # STICKS (only turning uses sticks)
+    axis_yaw_coarse: 0        # Left stick left/right → turn (big steps)
+    axis_yaw_fine: 3          # Right stick left/right → turn (small steps)
 
-    # Joystick button mappings
-    btn_surge_fwd: 0
-    btn_surge_bwd: 2
-    btn_sway_left: 1
-    btn_sway_right: 3
-    btn_heave_up: 7
-    btn_heave_down: 5
-    btn_pitch_up: 4
-    btn_pitch_down: 6
-    btn_stop_motion: 9
-    btn_emergency_stop: 8
+    # FACE BUTTONS (think of the diamond shape)
+    btn_surge_fwd: 3          # Y (top)    → go forward
+    btn_surge_bwd: 0          # A (bottom) → go backward
+    btn_sway_left: 2          # X (left)   → slide left
+    btn_sway_right: 1         # B (right)  → slide right
 
-    # Setpoint limits
+    # SHOULDER BUTTONS
+    btn_heave_up: 4           # LB → go up (rise)
+    btn_heave_down: 5         # RB → go down (dive)
+
+    # SMALL CENTER BUTTONS
+    btn_pitch_up: 7           # Start → tilt nose up
+    btn_pitch_down: 6         # Back  → tilt nose down
+
+    # STICK CLICKS (press the stick down like a button)
+    btn_stop_motion: 9        # Right stick click → stop all movement
+    btn_emergency_stop: 8     # Left stick click  → emergency stop
+
+    # LIMITS (unchanged)
     surge_limit: 5.0
     sway_limit: 5.0
     heave_min: 0.0
     heave_max: 10.0
     yaw_limit: 180.0
-
-    # Step sizes
     yaw_coarse_step: 10.0
     yaw_fine_step: 1.0
     heave_step: 0.1
