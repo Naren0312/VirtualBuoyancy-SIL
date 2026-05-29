@@ -20,7 +20,7 @@ import os
 
 from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, TimerAction
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 
@@ -77,12 +77,19 @@ def _generate_nodes(context):
                 get_package_share_directory('rov_sim'),
                 'config', 'scenarios', 'depth_hold.yaml'
             )
-        nodes.append(Node(
-            package='rov_sim',
-            executable='scenario_runner',
-            name='scenario_runner',
-            output='screen',
-            parameters=[{'scenario_file': scenario_file}],
+        # Delay scenario_runner so Unity has time to connect before steps fire.
+        # Without this, the early TELEOP/setpoint messages publish before Unity
+        # is subscribed (VOLATILE QoS = lost forever), leaving control_node
+        # stuck in SURFACE for the whole scenario.
+        nodes.append(TimerAction(
+            period=8.0,
+            actions=[Node(
+                package='rov_sim',
+                executable='scenario_runner',
+                name='scenario_runner',
+                output='screen',
+                parameters=[{'scenario_file': scenario_file}],
+            )]
         ))
 
     # ── Sim backend: mock OR Unity TCP bridge ────────────────────────────────

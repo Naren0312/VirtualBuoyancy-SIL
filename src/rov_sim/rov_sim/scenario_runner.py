@@ -8,9 +8,20 @@ import yaml
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, DurabilityPolicy, ReliabilityPolicy
 
 from rov_msgs.msg import Setpoint
 from std_msgs.msg import UInt8, String
+
+# QoS for /set_mode: TRANSIENT_LOCAL ("latched") so a subscriber that connects
+# after the message is sent still receives it. This is critical because the
+# mode=1 (TELEOP) message fires once at t=0, and DDS discovery might not yet
+# have completed the control_node subscription by then.
+_LATCHED_QOS = QoSProfile(
+    depth=1,
+    reliability=ReliabilityPolicy.RELIABLE,
+    durability=DurabilityPolicy.TRANSIENT_LOCAL,
+)
 
 
 class ScenarioRunner(Node):
@@ -52,7 +63,9 @@ class ScenarioRunner(Node):
 
         # ── Publishers ───────────────────────────────────────────────────────
         self._setpoint_pub = self.create_publisher(Setpoint, '/setpoints', 10)
-        self._mode_pub = self.create_publisher(UInt8, '/set_mode', 10)
+        # TRANSIENT_LOCAL so control_node receives the last mode even if it
+        # subscribes after this publishes (fixes VOLATILE one-shot loss).
+        self._mode_pub = self.create_publisher(UInt8, '/set_mode', _LATCHED_QOS)
         self._status_pub = self.create_publisher(String, '/scenario_status', 10)
 
         # ── State ────────────────────────────────────────────────────────────

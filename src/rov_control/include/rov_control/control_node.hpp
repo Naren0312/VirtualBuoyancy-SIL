@@ -41,6 +41,11 @@ private:
   void publish_thruster_command();
 
   // ── Subscribers ──────────────────────────────────────────────────────────
+  // Callback groups: sensor_data runs at 30 Hz — put it in its own group so
+  // it can't starve command callbacks (mode, setpoint) in the MT executor.
+  rclcpp::CallbackGroup::SharedPtr cb_group_sensor_;
+  rclcpp::CallbackGroup::SharedPtr cb_group_commands_;
+
   rclcpp::Subscription<rov_msgs::msg::SensorData>::SharedPtr sensor_sub_;
   rclcpp::Subscription<rov_msgs::msg::Setpoint>::SharedPtr setpoint_sub_;
   rclcpp::Subscription<rov_msgs::msg::PIDGains>::SharedPtr pid_gains_sub_;

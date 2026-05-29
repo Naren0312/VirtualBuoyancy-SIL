@@ -85,6 +85,14 @@ ControlNode::ControlNode() : Node("control_node") {
   // ── Initialize PID state ───────────────────────────────────────────────────
   reset_pid();
 
+  // ── Create callback groups ─────────────────────────────────────────────────
+  // sensor_data fires at 30 Hz — give it its own group so it can't starve
+  // the command subscriptions (mode, setpoint, pid_gains) in the MT executor.
+  cb_group_sensor_ = this->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive);
+  cb_group_commands_ = this->create_callback_group(
+      rclcpp::CallbackGroupType::MutuallyExclusive);
+
   // ── Create publishers ──────────────────────────────────────────────────────
   thruster_pub_ = this->create_publisher<rov_msgs::msg::ThrusterCommand>(
       "/thruster_command", 10);
@@ -92,21 +100,33 @@ ControlNode::ControlNode() : Node("control_node") {
       "/thruster_status", 10);
 
   // ── Create subscribers ─────────────────────────────────────────────────────
-  sensor_sub_ = this->create_subscription<rov_msgs::msg::SensorData>(
-      "/sensor_data", 10,
-      std::bind(&ControlNode::sensor_data_callback, this, std::placeholders::_1));
-
-  setpoint_sub_ = this->create_subscription<rov_msgs::msg::Setpoint>(
-      "/setpoints", 10,
-      std::bind(&ControlNode::setpoint_callback, this, std::placeholders::_1));
-
-  pid_gains_sub_ = this->create_subscription<rov_msgs::msg::PIDGains>(
-      "/pid_gains", 10,
-      std::bind(&ControlNode::pid_gains_callback, this, std::placeholders::_1));
-
-  mode_sub_ = this->create_subscription<std_msgs::msg::UInt8>(
-      "/set_mode", 10,
-      std::bind(&ControlNode::mode_callback, this, std::placeholders::_1));
+  // sensor_data → cb_group_sensor_  (high-rate 30 Hz, gets its own lane)
+  // mode/setpoint/pid_gains → cb_group_commands_  (never blocked by sensor loop)
+  {
+    rclcpp::SubscriptionOptions opts;
+    opts.callback_group = cb_group_sensor_;
+    sensor_sub_ = this->create_subscription<rov_msgs::msg::SensorData>(
+        "/sensor_data", 10,
+        std::bind(&ControlNode::sensor_data_callback, this, std::placeholders::_1),
+        opts);
+  }
+  {
+    rclcpp::SubscriptionOptions opts;
+    opts.callback_group = cb_group_commands_;
+    setpoint_sub_ = this->create_subscription<rov_msgs::msg::Setpoint>(
+        "/setpoints", 10,
+        std::bind(&ControlNode::setpoint_callback, this, std::placeholders::_1),
+        opts);
+    pid_gains_sub_ = this->create_subscription<rov_msgs::msg::PIDGains>(
+        "/pid_gains", 10,
+        std::bind(&ControlNode::pid_gains_callback, this, std::placeholders::_1),
+        opts);
+    mode_sub_ = this->create_subscription<std_msgs::msg::UInt8>(
+        "/set_mode",
+        rclcpp::QoS(1).reliable().transient_local(),
+        std::bind(&ControlNode::mode_callback, this, std::placeholders::_1),
+        opts);
+  }
 
   RCLCPP_INFO(this->get_logger(), "ControlNode initialized — mode: SURFACE");
   RCLCPP_INFO(this->get_logger(), "PID gains loaded: kp=[%.2f,%.2f,%.2f,%.2f,%.2f,%.2f]",
@@ -120,9 +140,9 @@ ControlNode::ControlNode() : Node("control_node") {
 void ControlNode::sensor_data_callback(
     const rov_msgs::msg::SensorData::SharedPtr msg) {
 
-//  if (mode_ != TELEOP) {
-//    return;
-// }
+    if (!thruster_active_) {
+        return;
+     }
 
   // ── Read sensor inputs ─────────────────────────────────────────────────────
   // orientation: [roll, pitch, yaw] in degrees → radians
